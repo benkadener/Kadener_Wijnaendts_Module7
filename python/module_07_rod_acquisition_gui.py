@@ -170,7 +170,12 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 		controls_layout.addWidget(self.new_run_button, 4, 2, 1, 2)
 		self.csv_filename_value = QtWidgets.QLabel("No run file")
 		controls_layout.addWidget(QtWidgets.QLabel("Current CSV"), 5, 0)
-		controls_layout.addWidget(self.csv_filename_value, 5, 1, 1, 4)
+		controls_layout.addWidget(self.csv_filename_value, 5, 1, 1, 3)
+		self.csv_filename_value.setWordWrap(True)
+		self.csv_filename_value.setSizePolicy(
+			QtWidgets.QSizePolicy.Policy.Ignored,
+			QtWidgets.QSizePolicy.Policy.Preferred,
+		)
 
 		self.temperature_value = QtWidgets.QLabel("-- C")
 		self.pwm_value = QtWidgets.QLabel("--")
@@ -200,7 +205,7 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 		live_values.addRow("uI", self.integral_pwm_value)
 		live_values.addRow("Requested u", self.requested_pwm_value)
 		live_values.addRow("Applied u", self.applied_pwm_value)
-		controls_layout.addLayout(live_values, 0, 4, 5, 1)
+		controls_layout.addLayout(live_values, 6, 0, 1, 4)
 
 		# The first plot displays the measured temperature over Arduino time.
 		self.temperature_plot = pg.PlotWidget()
@@ -253,12 +258,28 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 			name="Requested u",
 		)
 
+		# Two resizable columns: scrollable controls left, stacked graphs right.
 		central_widget = QtWidgets.QWidget()
-		layout = QtWidgets.QVBoxLayout(central_widget)
-		layout.addWidget(controls)
-		layout.addWidget(self.temperature_plot)
-		layout.addWidget(self.error_plot)
-		layout.addWidget(self.pwm_plot)
+		layout = QtWidgets.QHBoxLayout(central_widget)
+		splitter = QtWidgets.QSplitter(QtCore.Qt.Orientation.Horizontal)
+		controls_scroll = QtWidgets.QScrollArea()
+		controls_scroll.setWidgetResizable(True)
+		controls_scroll.setMinimumWidth(440)
+		controls_scroll.setWidget(controls)
+		controls_layout.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+		graphs = QtWidgets.QWidget()
+		graphs_layout = QtWidgets.QVBoxLayout(graphs)
+		graphs_layout.setContentsMargins(0, 0, 0, 0)
+		graphs_layout.addWidget(self.temperature_plot, 3)
+		graphs_layout.addWidget(self.error_plot, 1)
+		graphs_layout.addWidget(self.pwm_plot, 2)
+		splitter.addWidget(controls_scroll)
+		splitter.addWidget(graphs)
+		splitter.setStretchFactor(0, 0)
+		splitter.setStretchFactor(1, 1)
+		splitter.setSizes([480, 920])
+		layout.addWidget(splitter)
 		self.setCentralWidget(central_widget)
 
 		# Start with the TEC off and put the Arduino under serial control.
@@ -584,7 +605,7 @@ def main():
 	"""Start the display application."""
 	application = QtWidgets.QApplication(sys.argv)
 	window = TemperatureWindow()
-	window.resize(900, 500)
+	window.resize(1400, 850)
 	window.show()
 	sys.exit(application.exec())
 
