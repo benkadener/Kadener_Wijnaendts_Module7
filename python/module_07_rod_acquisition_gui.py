@@ -20,7 +20,7 @@ UPDATE_INTERVAL_MILLISECONDS = 100
 RUN_DATA_DIRECTORY = Path(__file__).resolve().parent / "run_data"
 INITIAL_SETPOINT_C = 32.5
 MINIMUM_SETPOINT_C = 5.0
-MAXIMUM_SETPOINT_C = 35.0
+MAXIMUM_SETPOINT_C = 60.0  # Lab operation must not exceed 55 C; Arduino trips at 60 C.
 INITIAL_PROPORTIONAL_GAIN = 1.0
 INITIAL_INTEGRAL_GAIN = 0.08
 PWM_LIMIT = 255
@@ -141,7 +141,7 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 		)
 		self.setpoint_input.setMaximumWidth(80)
 		self.setpoint_input.editingFinished.connect(self.setpoint_changed)
-		controls_layout.addWidget(QtWidgets.QLabel("Setpoint (5-35 C)"), 2, 2)
+		controls_layout.addWidget(QtWidgets.QLabel("Setpoint (5-60 C; lab max 55)"), 2, 2)
 		controls_layout.addWidget(self.setpoint_input, 2, 3)
 
 		self.gain_input = QtWidgets.QLineEdit(str(INITIAL_PROPORTIONAL_GAIN))
@@ -307,7 +307,17 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 		# Exclusive "x" mode above prevents overwriting any earlier run.
 		self.csv_writer.writerow(CSV_COLUMNS)
 		self.csv_file.flush()
-		self.csv_filename_value.setText(str(path))
+		# Keep host commands separate: the raw Arduino setpoint is unavailable.
+		# Match these rows to raw measurements using the same Arduino time_s.
+		command_path = path.with_name(path.stem + "_commands.csv")
+		self.command_file = open(command_path, "x", newline="")
+		self.command_writer = csv.writer(self.command_file)
+		self.command_writer.writerow([
+			"time_s", "gui_setpoint_C", "controller_mode", "kp_pwm_per_C",
+			"ki_pwm_per_C_s", "requested_signed_pwm", "commanded_signed_pwm",
+		])
+		self.command_file.flush()
+		self.csv_filename_value.setText(f"Raw: {path}\nGUI setpoints: {command_path}")
 
 	def start_new_run(self, checked=False):
 		"""Safely stop output and begin recording into a fresh run file."""
@@ -316,6 +326,7 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 		self.zero_integral(update_output=False)
 		if self.csv_file is not None:
 			self.csv_file.close()
+			self.command_file.close()
 		for values in (
 			self.times,
 			self.temperatures,
@@ -536,6 +547,14 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 				self.requested_pwm_value.setText(f"{self.requested_output:.2f}")
 				self.applied_pwm_value.setText(f"{self.applied_output:.0f}")
 
+			# Host setpoint and controller command at this Arduino timestamp.
+			# This resolves nan for analysis without altering any raw Arduino field.
+			self.command_writer.writerow([
+				time_seconds, self.setpoint, self.control_mode.currentText(),
+				self.proportional_gain, self.integral_gain,
+				self.requested_output, self.applied_output,
+			])
+			self.command_file.flush()
 			error = self.setpoint - temperature
 
 			setpoint = self.setpoint
@@ -598,6 +617,7 @@ class TemperatureWindow(QtWidgets.QMainWindow):
 			pass
 		self.serial_port.close()
 		self.csv_file.close()
+		self.command_file.close()
 		event.accept()
 
 
