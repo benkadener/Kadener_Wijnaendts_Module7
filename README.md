@@ -24,7 +24,7 @@ For a circular rod:
 - Ruler smallest division: **1 mm = 0.10 cm**. A clearly located endpoint is estimated to ±0.5 mm; adding the two endpoint bounds gives a conservative distance uncertainty of **±1 mm = ±0.10 cm**.
 - Analysis length: **L = (20.50 ± 0.10) cm = (0.2050 ± 0.0010) m**.
 - T2–T5 position uncertainties are **±0.10 cm = ±0.0010 m**, as listed above. T1 defines x = 0; uncertainty in locating T1 contributes to all relative distances. Increase the bounds if sensing centers cannot be located this precisely.
-- Diameter measured with calipers: **d = 1.2700 cm**. Reported caliper specification: **0.025 mm = 0.0025 cm**. Provisionally use **d = (1.2700 ± 0.0025) cm = (0.012700 ± 0.000025) m**. Confirm whether 0.025 mm is stated accuracy or only resolution; resolution alone does not establish instrument accuracy.
+- Diameter measured with calipers: **d = 1.2700 cm**. Reported caliper specification: **0.025 mm = 0.0025 cm**. The user confirmed this is the stated measurement error. Use **d = (1.2700 ± 0.0025) cm = (0.012700 ± 0.000025) m**.
 - The bounds above are practical measurement estimates, not established one-standard-deviation uncertainties. Shared-origin position errors are correlated; T5 and L must not be treated as independent measurements if both refer to the same tip location.
 
 Geometry values above use nominal dimensions. Their extra digits describe calculation precision, not measurement accuracy.
